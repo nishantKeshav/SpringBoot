@@ -14,6 +14,16 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.beans.factory.annotation.Autowired;
 
+
+import com.cloudinary.*;
+import com.cloudinary.utils.ObjectUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Base64;
+import java.util.Map;
+
 @RestController
 @Validated
 @RequestMapping("/log")
@@ -149,6 +159,24 @@ public class userController {
             throw new UserException("An error occurred while processing the request", HttpStatus.BAD_REQUEST);
         }
         return response;
+    }
+
+    @PostMapping("/checking")
+    @ResponseStatus(HttpStatus.OK)
+    public String checking(@RequestParam("file") MultipartFile file) throws Exception {
+        Cloudinary cloudinary = new Cloudinary("cloudinary://895995814835695:qP17WFOUyypYFWgc50X8-rqXjPg@dtxxayb3j");
+        Map<String, Object> uploadParams = ObjectUtils.asMap(
+                "use_filename", true,
+                "unique_filename", false,
+                "overwrite", true
+        );
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
+        String imageUrl = (String) uploadResult.get("secure_url");
+        URL url = new URL(imageUrl);
+        InputStream inputStream = url.openStream();
+        byte[] imageBytes = inputStream.readAllBytes();
+        String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+        return base64Image;
     }
 //    @PostMapping("/check")
 //    public ResponseEntity<String> uploadCSV(@RequestParam("file") MultipartFile file) {
