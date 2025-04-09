@@ -18,10 +18,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.cloudinary.*;
 import com.cloudinary.utils.ObjectUtils;
 
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.Map;
 
 @RestController
@@ -159,24 +170,6 @@ public class userController {
             throw new UserException("An error occurred while processing the request", HttpStatus.BAD_REQUEST);
         }
         return response;
-    }
-
-    @PostMapping("/checking")
-    @ResponseStatus(HttpStatus.OK)
-    public String checking(@RequestParam("file") MultipartFile file) throws Exception {
-        Cloudinary cloudinary = new Cloudinary("cloudinary://895995814835695:qP17WFOUyypYFWgc50X8-rqXjPg@dtxxayb3j");
-        Map<String, Object> uploadParams = ObjectUtils.asMap(
-                "use_filename", true,
-                "unique_filename", false,
-                "overwrite", true
-        );
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-        String imageUrl = (String) uploadResult.get("secure_url");
-        URL url = new URL(imageUrl);
-        InputStream inputStream = url.openStream();
-        byte[] imageBytes = inputStream.readAllBytes();
-        String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-        return base64Image;
     }
 //    @PostMapping("/check")
 //    public ResponseEntity<String> uploadCSV(@RequestParam("file") MultipartFile file) {

@@ -191,7 +191,7 @@ public class UserServiceImpl implements UserService {
             }
 
             String extensionName = Objects.requireNonNull(file.getOriginalFilename()).split("\\.")[1];
-            String newFileName = mobileNumber + "-" + "photo" + "." + extensionName;
+            String newFileName = mobileNumber + "_" + "ProfilePicture" + "." + extensionName;
 
             Boolean photoStatus = userRepository.getPhotoStatus(mobileNumber);
             if (photoStatus) {
@@ -221,7 +221,7 @@ public class UserServiceImpl implements UserService {
             if (!userRepository.existsByMobileNumber(mobileNumber)) {
                 throw new UserException("User not found", HttpStatus.NOT_FOUND);
             }
-            String fileName = mobileNumber + "-" + "photo" + "." + "jpg";
+            String fileName = mobileNumber + "_" + "ProfilePicture";
 
             Boolean photoStatus = userRepository.getPhotoStatus(mobileNumber);
             if (!photoStatus) {
@@ -248,7 +248,7 @@ public class UserServiceImpl implements UserService {
             if (!userRepository.existsByMobileNumber(mobileNumber)) {
                 throw new UserException("User not found", HttpStatus.NOT_FOUND);
             }
-            String fileName = mobileNumber + "-" + "photo" + "." + "jpg";
+            String fileName = mobileNumber + "_" + "ProfilePicture";
             Boolean photoStatus = userRepository.getPhotoStatus(mobileNumber);
             if (!photoStatus) {
                 throw new UserException("Profile Photo not found", HttpStatus.NOT_FOUND);

@@ -1,15 +1,21 @@
 package com.example.Employee_CRUD.utils;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.example.Employee_CRUD.exception.UserException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.net.URL;
 import java.util.Base64;
 import java.io.InputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.util.Map;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
@@ -31,17 +37,16 @@ public class UploadS3 {
     private String bucketName;
 
     public String getFileAsBase64(String fileName) throws IOException {
-        if (fileName == null || fileName.isEmpty()) {
+        if (fileName == null || fileName.trim().isEmpty()) {
             throw new IllegalArgumentException("File name cannot be null or empty.");
         }
-        BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.AP_SOUTH_1)
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .build();
-        InputStream inputStream = s3Client.getObject(new GetObjectRequest(bucketName, fileName)).getObjectContent();
-        byte[] fileBytes = inputStream.readAllBytes();
-        return Base64.getEncoder().encodeToString(fileBytes);
+        String imageUrl = "https://res.cloudinary.com/dtxxayb3j/image/upload/" + fileName;
+        try (InputStream inputStream = new URL(imageUrl).openStream()) {
+            byte[] imageBytes = inputStream.readAllBytes();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch image from Cloudinary", e);
+        }
     }
 
     public boolean fileExists(String fileName) {
@@ -56,36 +61,38 @@ public class UploadS3 {
         return s3Client.doesObjectExist(bucketName, fileName);
     }
 
-    public void deleteFromS3(String fileName) {
-        if (fileName == null || fileName.isEmpty()) {
-            throw new IllegalArgumentException("File name cannot be null or empty.");
+    public void deleteFromS3(String fileName) throws UserException {
+        String[] parts = fileName.split("\\.");
+        fileName = parts[0];
+        try {
+            if (fileName == null || fileName.isEmpty()) {
+                throw new IllegalArgumentException("File name cannot be null or empty.");
+            }
+            Cloudinary cloudinary = new Cloudinary("cloudinary://895995814835695:qP17WFOUyypYFWgc50X8-rqXjPg@dtxxayb3j");
+            Map result = cloudinary.uploader().destroy(fileName, ObjectUtils.emptyMap());
+            if ("not found".equals(result.get("result"))) {
+                throw new UserException("Profile picture not found!", HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            throw new UserException("Failed to delete file: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.AP_SOUTH_1)
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .build();
-        s3Client.deleteObject(bucketName, fileName);
     }
 
     public void uploadToS3(byte[] file, String fileName) throws Exception {
         if (!isPhoto(file, fileName)) {
             throw new IllegalArgumentException("Invalid file format! Only real JPG or PNG images are allowed.");
         }
-
         try {
-            BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
-            AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-                    .withRegion(Regions.AP_SOUTH_1)
-                    .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                    .build();
-
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(file);
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(file.length);
-            metadata.setContentType(isJpegMagicNumber(file) ? "image/jpeg" : "image/png");
-            s3Client.putObject(bucketName, fileName, inputStream, metadata);
-            inputStream.close();
+            String[] parts = fileName.split("\\.");
+            fileName = parts[0];
+            Cloudinary cloudinary = new Cloudinary("cloudinary://895995814835695:qP17WFOUyypYFWgc50X8-rqXjPg@dtxxayb3j");
+            Map uploadParams = ObjectUtils.asMap(
+                    "use_filename", true,
+                    "unique_filename", false,
+                    "overwrite", true,
+                    "public_id", fileName
+            );
+            cloudinary.uploader().upload(file, uploadParams);
         } catch (Exception e) {
             throw new Exception("Failed to upload file: " + e.getMessage());
         }
