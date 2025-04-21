@@ -196,13 +196,13 @@ public class UserServiceImpl implements UserService {
             Boolean photoStatus = userRepository.getPhotoStatus(mobileNumber);
             if (photoStatus) {
                 fileUploadService.deleteFromS3(newFileName);
-            } else {
-                int updateStatus = userRepository.updatePhotoStatus(mobileNumber , true);
-                if (updateStatus == 0) {
-                    throw new UserException("Photo upload failed", HttpStatus.INTERNAL_SERVER_ERROR);
-                }
             }
-            fileUploadService.uploadToS3(file.getBytes() , newFileName);
+            String version = fileUploadService.uploadToS3(file.getBytes() , newFileName);
+            int updateStatus = userRepository.updatePhotoId(mobileNumber, version);
+            if (updateStatus == 0) {
+                throw new UserException("Photo upload failed", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
             response.setMessage("Profile Photo uploaded Successfully!");
             response.setStatusCode(HttpStatus.OK.value());
 
@@ -227,7 +227,8 @@ public class UserServiceImpl implements UserService {
             if (!photoStatus) {
                 throw new UserException("Profile Photo not found", HttpStatus.NOT_FOUND);
             }
-            String photoBase64String = fileUploadService.getFileAsBase64(fileName);
+            String version = userRepository.getPhotoId(mobileNumber);
+            String photoBase64String = fileUploadService.getFileAsBase64(fileName , version);
 
             response.setProfilePhoto(photoBase64String);
             response.setStatusCode(HttpStatus.OK.value());
@@ -253,7 +254,7 @@ public class UserServiceImpl implements UserService {
             if (!photoStatus) {
                 throw new UserException("Profile Photo not found", HttpStatus.NOT_FOUND);
             }
-            int updateStatus = userRepository.updatePhotoStatus(mobileNumber, false);
+            int updateStatus = userRepository.updatePhotoId(mobileNumber, null);
             if (updateStatus == 0) {
                 throw new UserException("Photo deletion failed", HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -397,7 +398,7 @@ public class UserServiceImpl implements UserService {
                 .facebookLink(request.getFacebookLink().isEmpty() ? null : request.getFacebookLink())
                 .instagramLink(request.getInstagramLink().isEmpty()  ? null : request.getInstagramLink())
                 .referredByMobileNumber(request.getReferredByMobileNumber().isEmpty() ? null : request.getReferredByMobileNumber())
-                .photo(false)
+                .photoId(null)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

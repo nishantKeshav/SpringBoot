@@ -36,11 +36,11 @@ public class UploadS3 {
     @Value("${aws.bucketName}")
     private String bucketName;
 
-    public String getFileAsBase64(String fileName) throws IOException {
+    public String getFileAsBase64(String fileName , String version) throws IOException {
         if (fileName == null || fileName.trim().isEmpty()) {
             throw new IllegalArgumentException("File name cannot be null or empty.");
         }
-        String imageUrl = "https://res.cloudinary.com/dtxxayb3j/image/upload/" + fileName;
+        String imageUrl = "https://res.cloudinary.com/dtxxayb3j/image/upload/v" + version + "/" + fileName;
         try (InputStream inputStream = new URL(imageUrl).openStream()) {
             byte[] imageBytes = inputStream.readAllBytes();
             return Base64.getEncoder().encodeToString(imageBytes);
@@ -78,7 +78,7 @@ public class UploadS3 {
         }
     }
 
-    public void uploadToS3(byte[] file, String fileName) throws Exception {
+    public String uploadToS3(byte[] file, String fileName) throws Exception {
         if (!isPhoto(file, fileName)) {
             throw new IllegalArgumentException("Invalid file format! Only real JPG or PNG images are allowed.");
         }
@@ -92,7 +92,8 @@ public class UploadS3 {
                     "overwrite", true,
                     "public_id", fileName
             );
-            cloudinary.uploader().upload(file, uploadParams);
+            Map<String , Object> result = cloudinary.uploader().upload(file, uploadParams);
+            return result.get("version").toString();
         } catch (Exception e) {
             throw new Exception("Failed to upload file: " + e.getMessage());
         }

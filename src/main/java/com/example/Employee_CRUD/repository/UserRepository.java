@@ -47,10 +47,14 @@ public interface UserRepository extends JpaRepository<Users, String>{
 
     @Modifying
     @Transactional
-    @Query(value = "UPDATE users SET photo = :photo WHERE mobile_number = :mobileNumber", nativeQuery = true)
-    int updatePhotoStatus(@Param("mobileNumber") String mobileNumber, @Param("photo") boolean photo);
+    @Query(value = "UPDATE users SET photo_id = :photoId WHERE mobile_number = :mobileNumber", nativeQuery = true)
+    int updatePhotoId(@Param("mobileNumber") String mobileNumber, @Param("photoId") String photoId);
 
     @Transactional(readOnly = true)
-    @Query(value = "SELECT photo FROM users WHERE mobile_number = :mobileNumber", nativeQuery = true)
+    @Query(value = "SELECT CASE WHEN photo_id IS NOT NULL THEN TRUE ELSE FALSE END FROM users WHERE mobile_number = :mobileNumber", nativeQuery = true)
     Boolean getPhotoStatus(@Param("mobileNumber") String mobileNumber);
+
+    @Transactional(readOnly = true)
+    @Query(value = "SELECT photo_id FROM users WHERE mobile_number = :mobileNumber", nativeQuery = true)
+    String getPhotoId(@Param("mobileNumber") String mobileNumber);
 }

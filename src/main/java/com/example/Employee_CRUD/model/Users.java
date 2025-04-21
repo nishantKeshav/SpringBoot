@@ -77,8 +77,8 @@ public class Users {
     @Column(name = "referred_by_mobile_number" , nullable = true , updatable = false)
     private String referredByMobileNumber;
 
-    @Column(name = "photo" , nullable = false , updatable = true)
-    private Boolean photo = false;
+    @Column(name = "photo_id" , nullable = true , updatable = true)
+    private String photoId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

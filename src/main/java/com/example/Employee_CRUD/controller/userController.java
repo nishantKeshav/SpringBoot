@@ -1,6 +1,8 @@
 package com.example.Employee_CRUD.controller;
 
 import com.example.Employee_CRUD.exception.UserException;
+import com.example.Employee_CRUD.model.Master;
+import com.example.Employee_CRUD.repository.MasterRepository;
 import com.example.Employee_CRUD.service.UserService;
 import com.example.Employee_CRUD.utils.UploadS3;
 import jakarta.validation.Valid;
@@ -8,7 +10,11 @@ import jakarta.validation.Valid;
 import com.example.Employee_CRUD.dto.request.*;
 import com.example.Employee_CRUD.dto.response.*;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.validation.annotation.Validated;
@@ -24,16 +30,12 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
+import java.awt.List;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.Base64;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @Validated
@@ -45,6 +47,9 @@ public class userController {
 
     @Autowired
     private UploadS3 uploadS3;
+
+    @Autowired
+    private MasterRepository masterRepository;
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
@@ -186,7 +191,7 @@ public class userController {
 //        }
 //    }
 //    public void saveEmployees(MultipartFile file) throws IOException {
-//        List<Master> masters = new ArrayList<>();
+//        ArrayList<Master> masters = new ArrayList<>();
 //        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()));
 //             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withHeader("BLOCK-NAME", "GRAMPANCHAYAT-NAME", "VILLAGE-NAME").withIgnoreHeaderCase().withTrim())) {
 //
